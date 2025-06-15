@@ -9,9 +9,6 @@ module.exports = {
     react: {
       version: 'detect',
     },
-    jest: {
-      version: require('jest/package.json').version,
-    },
   },
   plugins: [
     '@typescript-eslint',

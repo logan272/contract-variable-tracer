@@ -1,37 +1,16 @@
 {
-  "include": ["./src"],
   "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
     "strict": true,
-    "target": "ES2020",
-    "module": "ESNEXT",
-    "moduleResolution": "Node",
-    "composite": true,
-    "declaration": true,
-    "allowJs": false,
-    "declarationMap": true,
     "esModuleInterop": true,
-    "noImplicitOverride": true,
-    "noImplicitThis": true,
-    "noImplicitReturns": false,
-    "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
-    "types": ["node", "jest"],
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "pretty": true,
-    "baseUrl": ".",
-    "rootDir": "src",
-    "outDir": "./dist/esm"
+    "rootDir": ".",
+    "outDir": "./dist"
   },
-  "ts-node": {
-    // Do not forget to `pnpm i -D tsconfig-paths`
-    "require": ["tsconfig-paths/register"]
-  },
-  "exclude": [
-    "**/*.spec.ts",
-    "**/*.test.ts",
-    "**/*.spec.tsx",
-    "**/*.test.tsx",
-    "benchmark/**/*"
-  ]
+  "exclude": ["node_modules", "dist"]
 }
