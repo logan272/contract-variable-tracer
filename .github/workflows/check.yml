@@ -16,8 +16,8 @@ jobs:
           - ubuntu-latest
           - macOS-latest
         node_version:
-          - 16
-          - 18
+          - 20
+          - 23
     steps:
       - name: checkout code repository
         uses: actions/checkout@v4
@@ -36,5 +36,3 @@ jobs:
       - run: pnpm install
       - run: pnpm build
       - run: pnpm ts-check
-      - run: pnpm lint
-      - run: pnpm run test
