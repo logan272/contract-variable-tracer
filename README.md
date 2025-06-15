@@ -8,10 +8,9 @@ A simple library and CLI tool for tracing smart contract variable changes over t
 
 ## ✨ Features
 
-- **Generic Contract Support**: Works with any smart contract and variable
 - **Event-Based Tracing**: Efficiently identifies blocks where variables might change
 - **Batch Processing**: Handles large block ranges with configurable batch sizes
-- **Multi-Chain Support**: Ethereum, Arbitrum, Polygon, Optimism, Base
+- **Multi-Chain Support**: Works with any EVM chains
 
 ## 📦 Installation
 
@@ -33,27 +32,26 @@ npm install contract-variable-tracer
 ```json
 {
   "contractAddress": "Your contract address",
-  "abi": [
-    "function totalPooledEth() view returns (uint256)"
-  ],
-  "methodName": "totalPooledEth",
+  "methodAbi": "function totalPooledEth() view returns (uint256)",
+  "methodParams": [],
+  // All the events that can cause the variable to update
   "events": [
     "event Stake(address indexed receiver, uint256 tokenAmount, uint256 shareAmount)",
+    "event RequestUnbond(address indexed receiver, uint256 indexed tokenId, uint256 shareAmount, uint256 exchangeRate, uint256 batchNo)",
     "event AccrueReward(uint256 indexed amount, string indexed txnHash)"
   ],
-  "fromBlock": "18000000",
-  "toBlock": "18100000",
-  "maxBlockRangePerQuery": "500",
+  "fromBlock": 22359679,
+  "toBlock": 22364679,
+  "maxBlockRangePerQuery": 500,
   "concurrentCallBatchSize": 10,
-  "outputFile": "./trace-results.json"
 }
 ```
 
 2. **Run the CLI**:
 ```bash
-cvt -c 1 -r rpc-url -f ./cvt.config.json
-# or just
 cvt
+# or
+cvt -c 1 -r rpc-url -f ./cvt.config.json
 ```
 
 ### Library Usage
@@ -67,21 +65,13 @@ const tracer = new ContractVariableTracer({chainId: 1, rpcUrl: 'xxx'});
 // Configure the trace
 const config: ContractVariableTraceConfig = {
   contractAddress: 'xxx',
-  abi: [
-    'function totalPooledEth() view returns (uint256)'
+  methodAbi: "function balanceOf(address) view returns (uint256)",
+  methodParams: ["0x123..."],
+  "events": [
+    "event Transfer(address indexed from, address indexed to, uint256 value)"
   ],
-  methodName: 'totalPooledEth',
-  events: [
-    'event Stake(address indexed receiver, uint256 tokenAmount, uint256 shareAmount)',
-    'event RequestUnbond(address indexed receiver, uint256 indexed tokenId, uint256 shareAmount, uint256 exchangeRate, uint256 batchNo)',
-    'event AccrueReward(uint256 indexed amount, string indexed txnHash)'
-  ],
-  fromBlock: 22359679n,
-  toBlock: 22689863n,
-  // maxBlockRangePerQuery: 500n,
-  // concurrentCallBatchSize: 10,
-  // dedup: true
-  // outputFile: 'xxx',
+  fromBlock: 22359679,
+  toBlock: 22689863,
 };
 
 // Run the trace
@@ -97,7 +87,7 @@ The main class for tracing contract variables.
 
 #### Constructor
 ```typescript
-new ContractVariableTracer(publicClient: PublicClient)
+new ContractVariableTracer(opts?: { chainId?: number, rpcUrl?: string })
 ```
 
 #### Methods
@@ -115,16 +105,14 @@ Traces variable values at specific block numbers.
 
 ```typescript
 interface ContractVariableTraceConfig {
-  contractAddress: Address;              // Contract address to trace
-  abi: Abi;                             // Contract ABI
-  methodName: string;                   // Method name to call
-  methodParams?: readonly unknown[];     // Method parameters (optional)
+  contractAddress: Address;             // Contract address to trace
+  methodAbi: string;                    // Contract ABI
+  methodParams?:  unknown[];            // Method parameters (optional)
   events: string[];                     // Events that trigger variable changes
-  fromBlock: bigint;                    // Starting block number
-  toBlock: bigint;                      // Ending block number
-  maxBlockRangePerQuery: bigint;        // Max blocks per RPC call (usually 500)
+  fromBlock: number;                    // Starting block number
+  toBlock: number;                      // Ending block number
+  maxBlockRangePerLogQuery:  number;    // Max blocks per RPC call (usually 500)
   concurrentCallBatchSize?: number;     // Concurrent contract calls (default: 10)
-  outputFile?: string;                  // Output file path (optional)
 }
 ```
 
@@ -146,8 +134,7 @@ Track key metrics like total value locked (TVL), exchange rates, or pool balance
 // Track Uniswap pool reserves
 const config = {
   contractAddress: '0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc', // USDC-ETH pool
-  abi: ['function getReserves() view returns (uint112, uint112, uint32)'],
-  methodName: 'getReserves',
+  methodAbi: 'function getReserves() view returns (uint112, uint112, uint32)',
   events: ['event Swap(address indexed sender, uint256 amount0In, uint256 amount1In, uint256 amount0Out, uint256 amount1Out, address indexed to)'],
   // ... other config
 };
@@ -160,24 +147,9 @@ Monitor voting power or delegation changes:
 // Track delegated votes
 const config = {
   contractAddress: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', // UNI token
-  abi: ['function getVotes(address account) view returns (uint256)'],
-  methodName: 'getVotes',
+  methodAbi: 'function getVotes(address account) view returns (uint256)',
   methodParams: ['0x123...'], // Specific address
   events: ['event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate)'],
-  // ... other config
-};
-```
-
-### Lending Protocol Metrics
-Track interest rates, utilization, or collateral ratios:
-
-```typescript
-// Track Compound cToken exchange rate
-const config = {
-  contractAddress: '0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643', // cDAI
-  abi: ['function exchangeRateStored() view returns (uint256)'],
-  methodName: 'exchangeRateStored',
-  events: ['event AccrueInterest(uint256 cashPrior, uint256 interestAccumulated, uint256 borrowIndex, uint256 totalBorrows)'],
   // ... other config
 };
 ```
@@ -188,25 +160,13 @@ const config = {
 
 - `-c, --chainId <number>`: Chain ID (1=Ethereum, 42161=Arbitrum, etc.)
 - `-r, --rpc <string>`: RPC URL for blockchain connection
+- `-o, --output <string>`: Output file path. If not specified, results are written to stdout
 - `-f, --config <string>`: Path to configuration JSON file
 - `-v, --verbose`: Enable verbose logging
 - `-h, --help`: Show help information
 - `-V, --version`: Show version number
 
-### Examples
-
-```bash
-# Ethereum mainnet
-contract-tracer -c 1 -r https://eth-mainnet.alchemyapi.io/v2/YOUR-KEY -f ./config.json
-
-# Arbitrum with verbose logging
-contract-tracer -c 42161 -r https://arb1.arbitrum.io/rpc -f ./config.json --verbose
-
-# Polygon
-contract-tracer -c 137 -r https://polygon-mainnet.infura.io/v3/YOUR-KEY -f ./config.json
-```
-
-## 📁 Configuration Examples
+## 📁 Examples
 
 ### ERC-20 Token Balance Tracking
 ```json
