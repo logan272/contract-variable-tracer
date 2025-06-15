@@ -83,3 +83,7 @@ docs/api/
 .turbo
 
 benchmark/results
+
+# contract-variable-tracer config file
+cvt.config.json
+.cvt.config.json
