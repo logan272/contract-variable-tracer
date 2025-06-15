@@ -49,11 +49,8 @@ async function loadConfig(
     if (!config.contractAddress) {
       throw new Error('Missing required field: contractAddress');
     }
-    if (!config.abi) {
-      throw new Error('Missing required field: abi');
-    }
-    if (!config.methodName) {
-      throw new Error('Missing required field: methodName');
+    if (!config.methodAbi) {
+      throw new Error('Missing required field: methodAbi');
     }
     if (!config.events || !Array.isArray(config.events)) {
       throw new Error('Missing or invalid field: events (must be an array)');
@@ -108,7 +105,7 @@ async function main(args: CliArgs) {
       console.log(`Connecting to chain ${args.chainId} via ${args.rpc}`);
       console.log(`Config loaded successfully from: ${args.config}`);
       console.log(`Contract: ${config.contractAddress}`);
-      console.log(`Method: ${config.methodName}`);
+      console.log(`Method: ${config.methodAbi}`);
       console.log(`Block range: ${config.fromBlock} to ${config.toBlock}`);
     }
 
