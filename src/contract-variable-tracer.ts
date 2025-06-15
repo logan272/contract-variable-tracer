@@ -21,11 +21,11 @@ export interface ContractVariableTraceConfig {
   /** All the events that can cause the variable to update */
   events: string[];
   /** Starting block number */
-  fromBlock: bigint;
+  fromBlock: number;
   /** Ending block number */
-  toBlock: bigint;
+  toBlock: number;
   /** Maximum block range allowed per eth_getLogs RPC call, default `500` */
-  maxBlockRangePerLogQuery?: bigint;
+  maxBlockRangePerLogQuery?: number;
   /** Batch size for concurrent contract calls, default `10` */
   concurrentCallBatchSize?: number;
   /** Whether to remove duplicated ouput values, default `true` */
@@ -78,14 +78,14 @@ export class ContractVariableTracer {
   private async getBlockNumbersFromLogs(
     contractAddress: Address,
     events: string[],
-    fromBlock: bigint,
-    toBlock: bigint,
+    fromBlock: number,
+    toBlock: number,
   ): Promise<string[]> {
     const logs = await this.publicClient.getLogs({
       address: contractAddress,
       events: parseAbi(events),
-      fromBlock,
-      toBlock,
+      fromBlock: BigInt(fromBlock),
+      toBlock: BigInt(toBlock),
     });
 
     return logs.map((log) => log.blockNumber.toString());
@@ -110,7 +110,7 @@ export class ContractVariableTracer {
       events,
       fromBlock,
       toBlock,
-      maxBlockRangePerLogQuery = 500n,
+      maxBlockRangePerLogQuery = 500,
     } = config;
 
     let allBlockNumbers: string[] = [];

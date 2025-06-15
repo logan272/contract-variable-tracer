@@ -60,10 +60,10 @@ async function loadConfig(
       throw new Error('Missing required field: toBlock');
     }
 
-    config.fromBlock = BigInt(config.fromBlock);
-    config.toBlock = BigInt(config.toBlock);
+    config.fromBlock = Number(config.fromBlock);
+    config.toBlock = Number(config.toBlock);
     if (config.maxBlockRangePerLogQuery) {
-      config.maxBlockRangePerLogQuery = BigInt(config.maxBlockRangePerLogQuery);
+      config.maxBlockRangePerLogQuery = Number(config.maxBlockRangePerLogQuery);
     }
 
     return { ...defaultConfig, ...config };
