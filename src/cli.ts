@@ -22,6 +22,13 @@ interface CliArgs {
 }
 
 /**
+ * Default config for cli
+ */
+const defaultConfig: Pick<ContractVariableTraceConfig, 'enableLog'> = {
+  enableLog: true,
+};
+
+/**
  * Load and validate configuration file
  */
 async function loadConfig(
@@ -64,12 +71,12 @@ async function loadConfig(
       config.maxBlockRangePerLogQuery = BigInt(config.maxBlockRangePerLogQuery);
     }
 
-    return config;
+    return { ...defaultConfig, ...config };
   } catch (error) {
     if (error instanceof SyntaxError) {
       throw new Error(`Invalid JSON in config file: ${error.message}`);
     }
-    if ((error as any).code === 'ENOENT') {
+    if ((error as { code: string }).code === 'ENOENT') {
       throw new Error(`Config file not found: ${configPath}`);
     }
     throw error;
@@ -118,9 +125,9 @@ async function main(args: CliArgs) {
     if (args.output) {
       saveToFile(results, args.output);
     } else {
-      console.log('================Tracing Result START====================');
+      console.log('\n================Tracing Result START====================');
       console.log(JSON.stringify(results, null, 2));
-      console.log('================Tracing Result EDN======================');
+      console.log('================Tracing Result EDN======================\n');
     }
 
     const endTime = Date.now();
