@@ -11,13 +11,14 @@ import { getChain } from './utils/get-chain';
 export interface ContractVariableTraceConfig {
   /** The contract address to trace */
   contractAddress: Address;
-  /** The human readable contract ABI */
-  abi: string[];
-  /** The method name to call for reading the variable */
-  methodName: string;
+  /**
+   * The human readable method ABI for reading the variable
+   * @example "function balanceOf(address) view returns (uint256)"
+   */
+  methodAbi: string;
   /** Additional parameters to pass to the method (optional) */
-  methodParams?: readonly unknown[];
-  /** Events that can cause the variable to update */
+  methodParams?: unknown[];
+  /** Al the events that can cause the variable to update */
   events: string[];
   /** Starting block number */
   fromBlock: bigint;
@@ -61,6 +62,16 @@ export class ContractVariableTracer {
     }
   }
 
+  private extractFunctionNameFromAbi(abi: string): string {
+    const regex = /function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/;
+    const match = abi.match(regex);
+    const fnName = match?.[1];
+    if (!fnName) {
+      throw new Error(`Invalid ABI: ${abi}`);
+    }
+    return fnName;
+  }
+
   /**
    * Get block numbers where specific events occurred that may have updated the variable
    */
@@ -85,7 +96,14 @@ export class ContractVariableTracer {
    * by scanning event logs in batches
    */
   public async collectBlockNumbers(
-    config: ContractVariableTraceConfig,
+    config: Pick<
+      ContractVariableTraceConfig,
+      | 'contractAddress'
+      | 'events'
+      | 'fromBlock'
+      | 'toBlock'
+      | 'maxBlockRangePerLogQuery'
+    >,
   ): Promise<string[]> {
     const {
       contractAddress,
@@ -135,13 +153,13 @@ export class ContractVariableTracer {
   ): Promise<TraceResult[]> {
     const {
       contractAddress,
-      abi,
-      methodName,
+      methodAbi,
       methodParams = [],
       concurrentCallBatchSize = 10,
       dedup: isDedup = true,
     } = config;
 
+    const abi: string[] = [methodAbi];
     // Create contract instance
     const contract = getContract({
       address: contractAddress,
@@ -149,6 +167,7 @@ export class ContractVariableTracer {
       client: this.publicClient,
     });
 
+    const methodName = this.extractFunctionNameFromAbi(methodAbi);
     // Validate that the method exists on the contract
     if (!contract.read[methodName]) {
       throw new Error(`Method '${methodName}' not found in contract ABI`);
