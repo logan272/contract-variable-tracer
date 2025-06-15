@@ -16,6 +16,7 @@ import { ContractVariableTracer } from './contract-variable-tracer';
 interface CliArgs {
   chainId: number;
   rpc: string;
+  output: string; // The output file path
   config: string;
   verbose?: boolean;
 }
@@ -76,6 +77,17 @@ async function loadConfig(
 }
 
 /**
+ * Save data to a JSON file
+ */
+async function saveToFile(data: unknown, filename: string): Promise<void> {
+  try {
+    await fs.writeFile(filename, JSON.stringify(data, null, 2));
+  } catch (error) {
+    console.error(`Failed to save to ${filename}:`, error);
+  }
+}
+
+/**
  * Main CLI handler
  */
 async function main(args: CliArgs) {
@@ -103,15 +115,19 @@ async function main(args: CliArgs) {
 
     const results = await tracer.traceVariable(config);
 
+    if (args.output) {
+      saveToFile(results, args.output);
+    } else {
+      console.log('================Tracing Result START====================');
+      console.log(JSON.stringify(results, null, 2));
+      console.log('================Tracing Result EDN======================');
+    }
+
     const endTime = Date.now();
     const duration = ((endTime - startTime) / 1000).toFixed(2);
 
     console.log(`Trace completed successfully!`);
     console.log(`Traced ${results.length} data points in ${duration}s`);
-
-    if (config.outputFile) {
-      console.log(`Results saved to: ${config.outputFile}`);
-    }
   } catch (error) {
     console.error(
       '❌ Error:',
@@ -146,6 +162,13 @@ const cli = yargs(hideBin(process.argv))
     demandOption: false,
     default: 'cvt.config.json',
     description: 'Path to the configuration JSON file',
+  })
+  .option('output', {
+    alias: 'o',
+    type: 'string',
+    demandOption: false,
+    description:
+      'Path to the output file, the tracing result to be save to this file when provided',
   })
   .option('verbose', {
     alias: 'v',

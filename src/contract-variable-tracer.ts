@@ -1,5 +1,3 @@
-import fs from 'node:fs/promises';
-
 import type { Address, PublicClient } from 'viem';
 import { createPublicClient, getContract, http, parseAbi } from 'viem';
 
@@ -31,8 +29,6 @@ export interface ContractVariableTraceConfig {
   concurrentCallBatchSize?: number;
   /** Whether to remove duplicated ouput values, default `true` */
   dedup?: boolean;
-  /** Optional file path to save results */
-  outputFile?: string;
 }
 
 /**
@@ -191,10 +187,6 @@ export class ContractVariableTracer {
       allValues = dedup(allValues, (a, b) => a.value === b.value);
     }
 
-    if (config.outputFile) {
-      await this.saveToFile(allValues, config.outputFile);
-    }
-
     return allValues;
   }
 
@@ -213,16 +205,5 @@ export class ContractVariableTracer {
     console.log('Tracing variable values...');
 
     return await this.traceVariableValues(config, blockNumbers);
-  }
-
-  /**
-   * Save data to a JSON file
-   */
-  private async saveToFile(data: unknown, filename: string): Promise<void> {
-    try {
-      await fs.writeFile(filename, JSON.stringify(data, null, 2));
-    } catch (error) {
-      console.error(`Failed to save to ${filename}:`, error);
-    }
   }
 }
