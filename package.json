@@ -38,7 +38,6 @@
     "clean": "rm -rf dist",
     "coverage": "jest --coverage",
     "lint": "eslint src",
-    "benchmark": "node benchmark",
     "fix": "eslint src --fix",
     "ts-check": "tsc --noEmit",
     "typedoc": "typedoc",
