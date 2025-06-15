@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
 
-A simple library and CLI tool for tracing smart contract variable changes over time by analyzing blockchain events and state.
+A simple library and CLI tool for tracing EVM smart contract variable changes over time by analyzing events.
 
 ## ✨ Features
 
@@ -28,7 +28,7 @@ npm install contract-variable-tracer
 
 ### CLI Usage
 
-1. **Create a configuration file** (`cvt.config.json`):
+1. **Create a configuration file** (default `cvt.config.json`):
 ```json
 {
   "contractAddress": "Your contract address",
@@ -42,7 +42,7 @@ npm install contract-variable-tracer
   ],
   "fromBlock": 22359679,
   "toBlock": 22364679,
-  "maxBlockRangePerQuery": 500,
+  "maxBlockRangePerLogQuery": 500,
   "concurrentCallBatchSize": 10,
 }
 ```
@@ -172,18 +172,13 @@ const config = {
 ```json
 {
   "contractAddress": "0xA0b86a33E6441C0C2C80E0514c22F18bb73c3327",
-  "abi": [
-    "function balanceOf(address) view returns (uint256)"
-  ],
-  "methodName": "balanceOf",
+  "methodAbi":  "function balanceOf(address) view returns (uint256)",
   "methodParams": ["0x123..."],
   "events": [
     "event Transfer(address indexed from, address indexed to, uint256 value)"
   ],
-  "fromBlock": "18000000",
-  "toBlock": "18100000",
-  "maxBlockRangePerQuery": "500",
-  "outputFile": "./token-balance-trace.json"
+  "fromBlock": "xxx",
+  "toBlock": "xxx",
 }
 ```
 
@@ -191,26 +186,21 @@ const config = {
 ```json
 {
   "contractAddress": "0x456...",
-  "abi": [
-    "function rewardPerToken() view returns (uint256)"
-  ],
+  "methodAbi": "function rewardPerToken() view returns (uint256)",
   "methodName": "rewardPerToken",
   "events": [
     "event RewardAdded(uint256 reward)",
     "event Staked(address indexed user, uint256 amount)",
     "event Withdrawn(address indexed user, uint256 amount)"
   ],
-  "fromBlock": "18000000",
-  "toBlock": "18100000",
-  "maxBlockRangePerQuery": "500",
-  "concurrentCallBatchSize": 15,
-  "outputFile": "./rewards-trace.json"
+  "fromBlock": "xxx",
+  "toBlock": "xxx",
 }
 ```
 
 ## ⚠️ RPC Limitations
 
-Most RPC providers limit `eth_getLogs` queries to 500-1000 blocks. Configure `maxBlockRangePerQuery` accordingly:
+Most RPC providers limit `eth_getLogs` queries to 500-1000 blocks. Configure `maxBlockRangePerLogQuery` accordingly:
 
 ## 📄 License
 
