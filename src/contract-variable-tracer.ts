@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 
-import type { Abi, Address, PublicClient } from 'viem';
+import type { Address, PublicClient } from 'viem';
 import { createPublicClient, getContract, http, parseAbi } from 'viem';
 
 import { chunk } from './utils/chunk';
@@ -13,8 +13,8 @@ import { getChain } from './utils/get-chain';
 export interface ContractVariableTraceConfig {
   /** The contract address to trace */
   contractAddress: Address;
-  /** The contract ABI */
-  abi: Abi;
+  /** The human readable contract ABI */
+  abi: string[];
   /** The method name to call for reading the variable */
   methodName: string;
   /** Additional parameters to pass to the method (optional) */
@@ -141,7 +141,7 @@ export class ContractVariableTracer {
     // Create contract instance
     const contract = getContract({
       address: contractAddress,
-      abi,
+      abi: parseAbi(abi),
       client: this.publicClient,
     });
 
@@ -157,8 +157,8 @@ export class ContractVariableTracer {
     for (const blockChunk of chunks) {
       const requests = blockChunk.map(async (blockNumber) => {
         try {
-          // Call the contract method with the specified parameters
           const contractMethod = contract.read[methodName];
+          // Call the contract method with the specified parameters at the specified block number
           const value = await contractMethod({
             ...(methodParams.length > 0 ? { args: methodParams } : {}),
             blockNumber: BigInt(blockNumber),
@@ -221,7 +221,6 @@ export class ContractVariableTracer {
   private async saveToFile(data: unknown, filename: string): Promise<void> {
     try {
       await fs.writeFile(filename, JSON.stringify(data, null, 2));
-      console.log(`Data saved to ${filename}`);
     } catch (error) {
       console.error(`Failed to save to ${filename}:`, error);
     }
