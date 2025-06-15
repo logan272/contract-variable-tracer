@@ -78,15 +78,6 @@ importers:
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.0)(typescript@5.8.3)
-      typedoc:
-        specifier: ^0.25.7
-        version: 0.25.13(typescript@5.8.3)
-      typedoc-github-wiki-theme:
-        specifier: ^1.1.0
-        version: 1.1.0(typedoc-plugin-markdown@3.17.1(typedoc@0.25.13(typescript@5.8.3)))(typedoc@0.25.13(typescript@5.8.3))
-      typedoc-plugin-markdown:
-        specifier: ^3.17.1
-        version: 3.17.1(typedoc@0.25.13(typescript@5.8.3))
       typescript:
         specifier: ^5.3.3
         version: 5.8.3
@@ -1523,11 +1514,6 @@ packages:
   graphemer@1.4.0:
     resolution: {integrity: sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==}
 
-  handlebars@4.7.8:
-    resolution: {integrity: sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==}
-    engines: {node: '>=0.4.7'}
-    hasBin: true
-
   hard-rejection@2.1.0:
     resolution: {integrity: sha512-VIZB+ibDhx7ObhAe7OVtoEbuP4h/MuOTHJ+J8h/eBXotJYl0fBgR72xDFCKgIh22OJZIOVNxBMWuhAr10r8HdA==}
     engines: {node: '>=6'}
@@ -2208,9 +2194,6 @@ packages:
   natural-compare@1.4.0:
     resolution: {integrity: sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==}
 
-  neo-async@2.6.2:
-    resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
-
   node-int64@0.4.0:
     resolution: {integrity: sha512-O5lz91xSOeoXP6DulyHfllpq+Eg00MWitZIbtPfoSEvqIHdl5gfcY6hYzDWnj0qD5tz52PI08u9qUvSVeUBeHw==}
 
@@ -2854,17 +2837,6 @@ packages:
     resolution: {integrity: sha512-3KS2b+kL7fsuk/eJZ7EQdnEmQoaho/r6KUef7hxvltNA5DR8NAUM+8wJMbJyZ4G9/7i3v5zPBIMN5aybAh2/Jg==}
     engines: {node: '>= 0.4'}
 
-  typedoc-github-wiki-theme@1.1.0:
-    resolution: {integrity: sha512-VyFmz8ZV2j/qEsCjD5EtR6FgZsCoy64Zr6SS9kCTcq7zx69Cx4UJBx8Ga/naxqs08TDggE6myIfODY6awwAGcA==}
-    peerDependencies:
-      typedoc: '>=0.24.0'
-      typedoc-plugin-markdown: '>=3.15.0'
-
-  typedoc-plugin-markdown@3.17.1:
-    resolution: {integrity: sha512-QzdU3fj0Kzw2XSdoL15ExLASt2WPqD7FbLeaqwT70+XjKyTshBnUlQA5nNREO1C2P8Uen0CDjsBLMsCQ+zd0lw==}
-    peerDependencies:
-      typedoc: '>=0.24.0'
-
   typedoc@0.25.13:
     resolution: {integrity: sha512-pQqiwiJ+Z4pigfOnnysObszLiU3mVLWAExSPf+Mu06G/qsc3wzbuM56SZQvONhHLncLUhYzOVkjFFpFfL5AzhQ==}
     engines: {node: '>= 16'}
@@ -2875,11 +2847,6 @@ packages:
   typescript@5.8.3:
     resolution: {integrity: sha512-p1diW6TqL9L07nNxvRMM7hMMw4c5XOo/1ibL4aAIGmSAt9slTE1Xgw5KWuof2uTOvCg9BY7ZRi+GaF+7sfgPeQ==}
     engines: {node: '>=14.17'}
-    hasBin: true
-
-  uglify-js@3.19.3:
-    resolution: {integrity: sha512-v3Xu+yuwBXisp6QYTcH4UbH+xYJXqnq2m/LtQVWKWzYc1iehYnLixoQDN9FH6/j9/oybfd6W9Ghwkl8+UMKTKQ==}
-    engines: {node: '>=0.8.0'}
     hasBin: true
 
   unbox-primitive@1.1.0:
@@ -2979,9 +2946,6 @@ packages:
   word-wrap@1.2.5:
     resolution: {integrity: sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA==}
     engines: {node: '>=0.10.0'}
-
-  wordwrap@1.0.0:
-    resolution: {integrity: sha512-gvVzJFlPycKc5dZN4yPkP8w7Dc37BtP1yczEneOb4uq34pXZcvrtRTmWV8W+Ume+XCxKgbjM+nevkyFPMybd4Q==}
 
   wrap-ansi@7.0.0:
     resolution: {integrity: sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==}
@@ -4844,15 +4808,6 @@ snapshots:
 
   graphemer@1.4.0: {}
 
-  handlebars@4.7.8:
-    dependencies:
-      minimist: 1.2.8
-      neo-async: 2.6.2
-      source-map: 0.6.1
-      wordwrap: 1.0.0
-    optionalDependencies:
-      uglify-js: 3.19.3
-
   hard-rejection@2.1.0: {}
 
   has-bigints@1.1.0: {}
@@ -5706,8 +5661,6 @@ snapshots:
 
   natural-compare@1.4.0: {}
 
-  neo-async@2.6.2: {}
-
   node-int64@0.4.0: {}
 
   node-releases@2.0.19: {}
@@ -6374,16 +6327,6 @@ snapshots:
       possible-typed-array-names: 1.1.0
       reflect.getprototypeof: 1.0.10
 
-  typedoc-github-wiki-theme@1.1.0(typedoc-plugin-markdown@3.17.1(typedoc@0.25.13(typescript@5.8.3)))(typedoc@0.25.13(typescript@5.8.3)):
-    dependencies:
-      typedoc: 0.25.13(typescript@5.8.3)
-      typedoc-plugin-markdown: 3.17.1(typedoc@0.25.13(typescript@5.8.3))
-
-  typedoc-plugin-markdown@3.17.1(typedoc@0.25.13(typescript@5.8.3)):
-    dependencies:
-      handlebars: 4.7.8
-      typedoc: 0.25.13(typescript@5.8.3)
-
   typedoc@0.25.13(typescript@5.8.3):
     dependencies:
       lunr: 2.3.9
@@ -6393,9 +6336,6 @@ snapshots:
       typescript: 5.8.3
 
   typescript@5.8.3: {}
-
-  uglify-js@3.19.3:
-    optional: true
 
   unbox-primitive@1.1.0:
     dependencies:
@@ -6526,8 +6466,6 @@ snapshots:
       isexe: 2.0.0
 
   word-wrap@1.2.5: {}
-
-  wordwrap@1.0.0: {}
 
   wrap-ansi@7.0.0:
     dependencies:
