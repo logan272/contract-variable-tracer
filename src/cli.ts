@@ -1,12 +1,17 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import cliProgress from 'cli-progress';
 import yargs from 'yargs';
 // eslint-disable-next-line import/no-unresolved
 import { hideBin } from 'yargs/helpers';
 
-import type { ContractVariableTraceConfig } from './contract-variable-tracer';
+import type {
+  ContractVariableTraceConfig,
+  OnProgressCallback,
+} from './contract-variable-tracer';
 import { ContractVariableTracer } from './contract-variable-tracer';
+import { removeComments } from './utils/remove-comments';
 
 /**
  * CLI arguments interface
@@ -18,13 +23,6 @@ interface CliArgs {
   config: string;
   verbose?: boolean;
 }
-
-/**
- * Default config for cli
- */
-const defaultConfig: Pick<ContractVariableTraceConfig, 'enableLog'> = {
-  enableLog: true,
-};
 
 /**
  * Load and validate configuration file
@@ -41,7 +39,9 @@ async function loadConfig(
 
     // Read and parse the config file
     const configContent = await fs.readFile(resolvedPath, 'utf-8');
-    const config = JSON.parse(configContent) as ContractVariableTraceConfig;
+    const config = JSON.parse(
+      removeComments(configContent),
+    ) as ContractVariableTraceConfig;
 
     // Basic validation
     if (!config.contractAddress) {
@@ -66,7 +66,7 @@ async function loadConfig(
       config.maxBlockRangePerLogQuery = Number(config.maxBlockRangePerLogQuery);
     }
 
-    return { ...defaultConfig, ...config };
+    return config;
   } catch (error) {
     if (error instanceof SyntaxError) {
       throw new Error(`Invalid JSON in config file: ${error.message}`);
@@ -115,7 +115,32 @@ async function main(args: CliArgs) {
     console.log('🚀 Starting contract variable trace...');
     const startTime = Date.now();
 
-    const results = await tracer.traceVariable(config);
+    const bars: Record<string, cliProgress.SingleBar> = {};
+    const onProgress: OnProgressCallback = ({
+      key,
+      description,
+      current,
+      total,
+    }) => {
+      if (!bars[key]) {
+        console.log(description);
+        bars[key] = new cliProgress.SingleBar(
+          {
+            clearOnComplete: true,
+          },
+          cliProgress.Presets.shades_classic,
+        );
+        bars[key].start(total, 0);
+      } else {
+        bars[key].update(current);
+      }
+
+      if (total === current) {
+        bars[key].stop();
+      }
+    };
+
+    const results = await tracer.traceVariable(config, onProgress);
 
     if (args.output) {
       saveToFile(results, args.output);

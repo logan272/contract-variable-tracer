@@ -30,8 +30,6 @@ export interface ContractVariableTraceConfig {
   concurrentCallBatchSize?: number;
   /** Whether to remove duplicated ouput values, default `true` */
   dedup?: boolean;
-  /** Whether to print log to stdio, default `false` */
-  enableLog?: boolean;
 }
 
 /**
@@ -41,6 +39,16 @@ export interface TraceResult {
   blockNumber: string;
   value: string;
 }
+
+// Add this to your types file
+export interface ProgressInfo {
+  key: string;
+  description: string;
+  current: number;
+  total: number;
+}
+
+export type OnProgressCallback = (progress: ProgressInfo) => void;
 
 /**
  * Generic smart contract variable tracer
@@ -54,12 +62,6 @@ export class ContractVariableTracer {
       chain: getChain(chainId),
       transport: http(rpcUrl),
     });
-  }
-
-  private log(enableLog = false, ...args: unknown[]) {
-    if (enableLog) {
-      console.log(...args);
-    }
   }
 
   private extractFunctionNameFromAbi(abi: string): string {
@@ -104,6 +106,7 @@ export class ContractVariableTracer {
       | 'toBlock'
       | 'maxBlockRangePerLogQuery'
     >,
+    onProgress?: OnProgressCallback,
   ): Promise<string[]> {
     const {
       contractAddress,
@@ -115,12 +118,22 @@ export class ContractVariableTracer {
 
     let allBlockNumbers: string[] = [];
 
+    const total = toBlock - fromBlock;
+    const key = 'collectBlockNumbers';
+    const description = 'Collecting block numbers...';
+
     // Process blocks in batches to avoid RPC limits
     for (
       let currentBlock = fromBlock;
       currentBlock < toBlock;
       currentBlock += maxBlockRangePerLogQuery
     ) {
+      onProgress?.({
+        key,
+        description,
+        current: currentBlock - fromBlock,
+        total,
+      });
       const endBlock =
         currentBlock + maxBlockRangePerLogQuery > toBlock
           ? toBlock
@@ -136,6 +149,14 @@ export class ContractVariableTracer {
       allBlockNumbers = allBlockNumbers.concat(blockNumbers);
     }
 
+    // 100% progress
+    onProgress?.({
+      key,
+      description,
+      current: total,
+      total,
+    });
+
     // Remove duplicates and sort
     const uniqueBlockNumbers = [...new Set(allBlockNumbers)].sort(
       (a, b) => Number(a) - Number(b),
@@ -150,6 +171,7 @@ export class ContractVariableTracer {
   public async traceVariableValues(
     config: ContractVariableTraceConfig,
     blockNumbers: string[],
+    onProgress?: OnProgressCallback,
   ): Promise<TraceResult[]> {
     const {
       contractAddress,
@@ -175,9 +197,19 @@ export class ContractVariableTracer {
 
     let allValues: TraceResult[] = [];
     const chunks = chunk(blockNumbers, concurrentCallBatchSize);
+    const key = 'traceVariableValues';
+    const description = 'Tracing variable changes...';
+    const total = blockNumbers.length;
 
     // Process chunks of block numbers concurrently
-    for (const blockChunk of chunks) {
+    for (let i = 0; i < chunks.length; i++) {
+      onProgress?.({
+        key,
+        description,
+        current: i * concurrentCallBatchSize,
+        total,
+      });
+      const blockChunk = chunks[i];
       const requests = blockChunk.map(async (blockNumber) => {
         try {
           const contractMethod = contract.read[methodName];
@@ -203,6 +235,14 @@ export class ContractVariableTracer {
         }
       });
 
+      // 100% progress
+      onProgress?.({
+        key,
+        description,
+        current: total,
+        total,
+      });
+
       const values = await Promise.all(requests);
       allValues = allValues.concat(values);
     }
@@ -222,15 +262,9 @@ export class ContractVariableTracer {
    */
   public async traceVariable(
     config: ContractVariableTraceConfig,
+    onProgress?: OnProgressCallback,
   ): Promise<TraceResult[]> {
-    this.log(config.enableLog, 'Collecting block numbers from event logs...');
-    const blockNumbers = await this.collectBlockNumbers(config);
-    this.log(
-      config.enableLog,
-      `Found ${blockNumbers.length} blocks with potential variable changes`,
-    );
-    this.log(config.enableLog, 'Tracing variable values...');
-
-    return await this.traceVariableValues(config, blockNumbers);
+    const blockNumbers = await this.collectBlockNumbers(config, onProgress);
+    return await this.traceVariableValues(config, blockNumbers, onProgress);
   }
 }
