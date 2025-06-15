@@ -29,6 +29,8 @@ export interface ContractVariableTraceConfig {
   concurrentCallBatchSize?: number;
   /** Whether to remove duplicated ouput values, default `true` */
   dedup?: boolean;
+  /** Whether to print log to stdio, default `false` */
+  enableLog?: boolean;
 }
 
 /**
@@ -51,6 +53,12 @@ export class ContractVariableTracer {
       chain: getChain(chainId),
       transport: http(rpcUrl),
     });
+  }
+
+  private log(enableLog = false, ...args: unknown[]) {
+    if (enableLog) {
+      console.log(...args);
+    }
   }
 
   /**
@@ -196,13 +204,13 @@ export class ContractVariableTracer {
   public async traceVariable(
     config: ContractVariableTraceConfig,
   ): Promise<TraceResult[]> {
-    console.log('Collecting block numbers from event logs...');
+    this.log(config.enableLog, 'Collecting block numbers from event logs...');
     const blockNumbers = await this.collectBlockNumbers(config);
-
-    console.log(
+    this.log(
+      config.enableLog,
       `Found ${blockNumbers.length} blocks with potential variable changes`,
     );
-    console.log('Tracing variable values...');
+    this.log(config.enableLog, 'Tracing variable values...');
 
     return await this.traceVariableValues(config, blockNumbers);
   }
