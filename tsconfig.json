@@ -17,10 +17,15 @@
     "skipLibCheck": true,
     "types": ["node", "jest"],
     "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
     "pretty": true,
     "baseUrl": ".",
     "rootDir": "src",
     "outDir": "./dist/esm"
+  },
+  "ts-node": {
+    // Do not forget to `pnpm i -D tsconfig-paths`
+    "require": ["tsconfig-paths/register"]
   },
   "exclude": [
     "**/*.spec.ts",
