@@ -18,7 +18,7 @@ export interface ContractVariableTraceConfig {
   methodAbi: string;
   /** Additional parameters to pass to the method (optional) */
   methodParams?: unknown[];
-  /** Al the events that can cause the variable to update */
+  /** All the events that can cause the variable to update */
   events: string[];
   /** Starting block number */
   fromBlock: bigint;
