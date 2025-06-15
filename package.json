@@ -1,6 +1,6 @@
 {
-  "name": "evm-var-tracer",
-  "description": "A tool for tracing changes of evm storage variable over time",
+  "name": "contract-var-tracer",
+  "description": "A CLI tool for tracing smart contract variable changes over time by analyzing blockchain events and state",
   "author": "Logan Luo <github.com/logan272>",
   "version": "0.1.0",
   "license": "MIT",
@@ -27,9 +27,12 @@
     "README.md",
     "LICENSE"
   ],
+  "bin": {
+    "contract-var-tracer": "dist/cjs/cli.js"
+  },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "main": "node dist/cjs/main.js",
+    "cli": "node dist/cjs/cli.js",
     "build": "pnpm clean && tsc && tsc --module commonjs --outDir dist/cjs",
     "test": "jest",
     "clean": "rm -rf dist",
@@ -53,6 +56,7 @@
     "@mxssfd/typedoc-theme": "^1.1.3",
     "@types/jest": "^29.5.11",
     "@types/node": "^20.11.1",
+    "@types/yargs": "^17.0.33",
     "@typescript-eslint/eslint-plugin": "^6.18.1",
     "@typescript-eslint/parser": "^6.18.1",
     "eslint": "^8.56.0",
@@ -72,6 +76,7 @@
     "typedoc": "^0.25.7",
     "typedoc-github-wiki-theme": "^1.1.0",
     "typedoc-plugin-markdown": "^3.17.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "yargs": "^18.0.0"
   }
 }
