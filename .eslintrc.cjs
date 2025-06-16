@@ -46,6 +46,5 @@ module.exports = {
         caughtErrorsIgnorePattern: '^_',
       },
     ],
-    'max-lines': ['error', { max: 400, skipBlankLines: true }],
   },
 };
