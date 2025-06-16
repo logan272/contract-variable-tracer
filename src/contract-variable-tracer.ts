@@ -166,13 +166,32 @@ export class ContractVariableTracer {
   }
 
   /**
-   * Trace the variable values at specific block numbers
+   * Traces a contract variable over time with optional progress reporting.
+   * Can either generate block numbers automatically or use provided block numbers.
    */
-  public async traceVariableValues(
+  public async trace(
+    config: ContractVariableTraceConfig,
+    onProgress?: OnProgressCallback,
+  ): Promise<TraceResult[]>;
+  public async trace(
     config: ContractVariableTraceConfig,
     blockNumbers: string[],
     onProgress?: OnProgressCallback,
+  ): Promise<TraceResult[]>;
+  public async trace(
+    config: ContractVariableTraceConfig,
+    blockNumbersOrOnProgress?: string[] | OnProgressCallback,
+    onProgress?: OnProgressCallback,
   ): Promise<TraceResult[]> {
+    let blockNumbers: string[] | undefined;
+
+    if (Array.isArray(blockNumbersOrOnProgress)) {
+      blockNumbers = blockNumbersOrOnProgress;
+    } else {
+      onProgress = blockNumbersOrOnProgress;
+      blockNumbers = await this.collectBlockNumbers(config, onProgress);
+    }
+
     const {
       contractAddress,
       methodAbi,
@@ -197,7 +216,7 @@ export class ContractVariableTracer {
 
     let allValues: TraceResult[] = [];
     const chunks = chunk(blockNumbers, concurrentCallBatchSize);
-    const key = 'traceVariableValues';
+    const key = 'trace';
     const description = 'Tracing variable changes...';
     const total = blockNumbers.length;
 
@@ -255,16 +274,5 @@ export class ContractVariableTracer {
     }
 
     return allValues;
-  }
-
-  /**
-   * Complete tracing workflow: collect block numbers and trace variable values
-   */
-  public async traceVariable(
-    config: ContractVariableTraceConfig,
-    onProgress?: OnProgressCallback,
-  ): Promise<TraceResult[]> {
-    const blockNumbers = await this.collectBlockNumbers(config, onProgress);
-    return await this.traceVariableValues(config, blockNumbers, onProgress);
   }
 }

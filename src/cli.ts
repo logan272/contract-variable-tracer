@@ -140,7 +140,7 @@ async function main(args: CliArgs) {
       }
     };
 
-    const results = await tracer.traceVariable(config, onProgress);
+    const results = await tracer.trace(config, onProgress);
 
     if (args.output) {
       saveToFile(results, args.output);

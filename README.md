@@ -75,7 +75,7 @@ const config: ContractVariableTraceConfig = {
 };
 
 // Run the trace
-const results = await tracer.traceVariable(config);
+const results = await tracer.trace(config);
 console.log(`Traced ${results.length} data points`);
 ```
 
@@ -92,14 +92,40 @@ new ContractVariableTracer(opts?: { chainId?: number, rpcUrl?: string })
 
 #### Methods
 
-##### `traceVariable(config: ContractVariableTraceConfig): Promise<TraceResult[]>`
-Complete tracing workflow that collects relevant block numbers and traces variable values.
+##### `trace`
+```ts
+public async trace(
+  config: ContractVariableTraceConfig,
+  onProgress?: OnProgressCallback,
+): Promise<TraceResult[]>;
+public async trace(
+  config: ContractVariableTraceConfig,
+  blockNumbers: string[],
+  onProgress?: OnProgressCallback,
+): Promise<TraceResult[]>;
+public async trace(
+  config: ContractVariableTraceConfig,
+  blockNumbersOrOnProgress?: string[] | OnProgressCallback,
+  onProgress?: OnProgressCallback,
+): Promise<TraceResult[]>;
+```
+Traces a contract variable over time with optional progress reporting.Can either generate block numbers automatically or use provided block numbers.
 
-##### `collectBlockNumbers(config: ContractVariableTraceConfig): Promise<string[]>`
+##### `collectBlockNumbers`
+```ts
+public async collectBlockNumbers(
+  config: Pick<
+    ContractVariableTraceConfig,
+    | 'contractAddress'
+    | 'events'
+    | 'fromBlock'
+    | 'toBlock'
+    | 'maxBlockRangePerLogQuery'
+  >,
+  onProgress?: OnProgressCallback,
+): Promise<string[]>;
+```
 Collects block numbers where specified events occurred.
-
-##### `traceVariableValues(config: ContractVariableTraceConfig, blockNumbers: string[]): Promise<TraceResult[]>`
-Traces variable values at specific block numbers.
 
 ### Configuration Interface
 
