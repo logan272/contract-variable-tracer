@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
 
-A simple library and CLI tool for tracing EVM smart contract variable changes over time by analyzing events.
+A CLI tool for tracing and monitoring EVM smart contract variable changes over time by analyzing events
 
 ## ✨ Features
 
@@ -49,9 +49,13 @@ npm install contract-variable-tracer
 
 2. **Run the CLI**:
 ```bash
+# trace mode
 cvt
-# or
-cvt -c 1 -r rpc-url -f ./cvt.config.json
+# watch mode
+cvt -w
+
+# specific more options
+cvt -c 1 -r YOUR_RPC_URL -f ./cvt.config.json
 ```
 
 ### Library Usage
@@ -77,6 +81,35 @@ const config: ContractVariableTraceConfig = {
 // Run the trace
 const results = await tracer.trace(config);
 console.log(`Traced ${results.length} data points`);
+
+// Watch/Monitoring mode
+const cleanup = await tracer.watch(
+  config,
+  (prev, curr) => {
+    console.log(`Value: ${prev?.value || 'N/A'} → ${curr.value}`);
+  }
+);
+
+// Monitoring with filtering and error handling
+const cleanup = await tracer.watch(
+  config,
+  async (prev, curr) => {
+    await sendAlert(`Critical change detected: ${curr.value}`);
+  },
+  {
+    filter: (prev, curr) => {
+      // Only alert on significant changes (>5%)
+      if (!prev) return true;
+      const change = Math.abs(Number(curr.value) - Number(prev.value));
+      return change / Number(prev.value) > 0.05;
+    },
+    onError: (error) => console.error('Monitoring failed:', error),
+    onReconnect: () => console.log('Reconnected successfully')
+  }
+);
+
+// Stop monitoring when done
+cleanup();
 ```
 
 ## 📖 API Documentation
@@ -88,6 +121,20 @@ The main class for tracing contract variables.
 #### Constructor
 ```typescript
 new ContractVariableTracer(opts?: { chainId?: number, rpcUrl?: string })
+```
+### Configuration Interface
+
+```typescript
+interface ContractVariableTraceConfig {
+  contractAddress: Address;             // Contract address to trace
+  methodAbi: string;                    // Contract ABI
+  methodParams?:  unknown[];            // Method parameters (optional)
+  events: string[];                     // Events that trigger variable changes
+  fromBlock: number;                    // Starting block number
+  toBlock: number;                      // Ending block number
+  maxBlockRangePerLogQuery:  number;    // Max blocks per RPC call (usually 500)
+  concurrentCallBatchSize?: number;     // Concurrent contract calls (default: 10)
+}
 ```
 
 #### Methods
@@ -111,6 +158,22 @@ public async trace(
 ```
 Traces a contract variable over time with optional progress reporting.Can either generate block numbers automatically or use provided block numbers.
 
+##### `watch`
+```ts
+public async watch(
+  config: ContractVariableTraceConfig,
+  onNewValue: OnNewValueCallback,
+  opts: WatchOptions = {},
+): Promise<() => void>;
+```
+Continuously monitors a smart contract variable for changes by watching for relevant events.
+This method establishes real-time monitoring of a contract variable by:
+
+1. Setting up event listeners for specified events that may trigger variable changes
+2. Reading the current variable value when events are detected
+3. Comparing with the previous value to detect actual changes
+4. Invoking callbacks only when the value has actually changed
+
 ##### `collectBlockNumbers`
 ```ts
 public async collectBlockNumbers(
@@ -127,20 +190,6 @@ public async collectBlockNumbers(
 ```
 Collects block numbers where specified events occurred.
 
-### Configuration Interface
-
-```typescript
-interface ContractVariableTraceConfig {
-  contractAddress: Address;             // Contract address to trace
-  methodAbi: string;                    // Contract ABI
-  methodParams?:  unknown[];            // Method parameters (optional)
-  events: string[];                     // Events that trigger variable changes
-  fromBlock: number;                    // Starting block number
-  toBlock: number;                      // Ending block number
-  maxBlockRangePerLogQuery:  number;    // Max blocks per RPC call (usually 500)
-  concurrentCallBatchSize?: number;     // Concurrent contract calls (default: 10)
-}
-```
 
 ### Result Interface
 
@@ -188,6 +237,7 @@ const config = {
 - `-r, --rpc <string>`: RPC URL for blockchain connection
 - `-o, --output <string>`: Output file path. If not specified, results are written to stdout
 - `-f, --config <string>`: Path to configuration JSON file
+- `-w, --watch` : Enable watch mode for real-time monitoring
 - `-v, --verbose`: Enable verbose logging
 - `-h, --help`: Show help information
 - `-V, --version`: Show version number
