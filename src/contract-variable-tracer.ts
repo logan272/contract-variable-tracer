@@ -229,35 +229,14 @@ export class ContractVariableTracer {
     blockNumbersOrOnProgress?: string[] | OnProgressCallback,
     onProgress?: OnProgressCallback,
   ): Promise<TraceResult[]> {
-    let blockNumbers: string[] | undefined;
+    const { concurrentCallBatchSize = 10, dedup: isDedup = true } = config;
 
+    let blockNumbers: string[] | undefined;
     if (Array.isArray(blockNumbersOrOnProgress)) {
       blockNumbers = blockNumbersOrOnProgress;
     } else {
       onProgress = blockNumbersOrOnProgress;
       blockNumbers = await this.collectBlockNumbers(config, onProgress);
-    }
-
-    const {
-      contractAddress,
-      methodAbi,
-      methodParams = [],
-      concurrentCallBatchSize = 10,
-      dedup: isDedup = true,
-    } = config;
-
-    const abi: string[] = [methodAbi];
-    // Create contract instance
-    const contract = getContract({
-      address: contractAddress,
-      abi: parseAbi(abi),
-      client: this.publicClient,
-    });
-
-    const methodName = this.extractFunctionNameFromAbi(methodAbi);
-    // Validate that the method exists on the contract
-    if (!contract.read[methodName]) {
-      throw new Error(`Method '${methodName}' not found in contract ABI`);
     }
 
     let allValues: TraceResult[] = [];
@@ -277,22 +256,15 @@ export class ContractVariableTracer {
       const blockChunk = chunks[i];
       const requests = blockChunk.map(async (blockNumber) => {
         try {
-          const contractMethod = contract.read[methodName];
           // Call the contract method with the specified parameters at the specified block number
-          const value = await contractMethod({
-            ...(methodParams.length > 0 ? { args: methodParams } : {}),
-            blockNumber: BigInt(blockNumber),
-          });
+          const value = await this.readVariableAtBlock(config, blockNumber);
 
           return {
             blockNumber,
-            value: (value as bigint).toString(),
+            value,
           };
         } catch (error) {
-          console.warn(
-            `Failed to read ${methodName} at block ${blockNumber}:`,
-            error,
-          );
+          console.error(`Failed to read value at block ${blockNumber}:`, error);
           return {
             blockNumber,
             value: 'ERROR',
