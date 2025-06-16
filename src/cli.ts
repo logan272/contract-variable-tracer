@@ -21,6 +21,7 @@ interface CliArgs {
   rpc: string;
   output: string; // The output file path
   config: string;
+  watch?: boolean; // Watch mode
   verbose?: boolean;
 }
 
@@ -29,6 +30,7 @@ interface CliArgs {
  */
 async function loadConfig(
   configPath: string,
+  isWatchMode: boolean = false,
 ): Promise<ContractVariableTraceConfig> {
   try {
     // Resolve the config file path
@@ -53,11 +55,14 @@ async function loadConfig(
     if (!config.events || !Array.isArray(config.events)) {
       throw new Error('Missing or invalid field: events (must be an array)');
     }
-    if (typeof config.fromBlock === 'undefined') {
-      throw new Error('Missing required field: fromBlock');
-    }
-    if (typeof config.toBlock === 'undefined') {
-      throw new Error('Missing required field: toBlock');
+    // For watch mode, fromBlock and toBlock are not required
+    if (!isWatchMode) {
+      if (typeof config.fromBlock === 'undefined') {
+        throw new Error('Missing required field: fromBlock');
+      }
+      if (typeof config.toBlock === 'undefined') {
+        throw new Error('Missing required field: toBlock');
+      }
     }
 
     config.fromBlock = Number(config.fromBlock);
@@ -79,6 +84,13 @@ async function loadConfig(
 }
 
 /**
+ * Format timestamp for logging
+ */
+function formatTimestamp(): string {
+  return new Date().toISOString();
+}
+
+/**
  * Save data to a JSON file
  */
 async function saveToFile(data: unknown, filename: string): Promise<void> {
@@ -90,6 +102,139 @@ async function saveToFile(data: unknown, filename: string): Promise<void> {
 }
 
 /**
+ * Watch mode handler
+ */
+async function handleWatchMode(
+  args: CliArgs,
+  config: ContractVariableTraceConfig,
+) {
+  console.log('👀 Starting watch mode...');
+  console.log(`Contract: ${config.contractAddress}`);
+  console.log(`Method: ${config.methodAbi}`);
+  console.log(`Events:\n\t${config.events.join('\n\t')}`);
+  console.log('✅ Watch mode active. Press Ctrl+C to stop.');
+  console.log('---');
+
+  const tracer = new ContractVariableTracer({
+    chainId: args.chainId,
+    rpcUrl: args.rpc,
+  });
+
+  let changeCount = 0;
+  const startTime = Date.now();
+
+  const cleanup = await tracer.watch(
+    config,
+    async (prev, curr) => {
+      changeCount++;
+      const timestamp = formatTimestamp();
+
+      // Simple output to stdout
+      if (prev) {
+        console.log(
+          `[${timestamp}] ${prev.value} → ${curr.value} (block ${curr.blockNumber})`,
+        );
+      } else {
+        console.log(
+          `[${timestamp}] 🎯 Initial: ${curr.value} (block ${curr.blockNumber})`,
+        );
+      }
+    },
+    {
+      onError: async (error) => {
+        const timestamp = formatTimestamp();
+        console.error(`[${timestamp}] ❌ Error: ${error.message}`);
+
+        if (args.verbose) {
+          console.error('Details:', error);
+        }
+      },
+      onReconnect: async () => {
+        const timestamp = formatTimestamp();
+        console.log(`[${timestamp}] 🔄 Reconnected`);
+      },
+    },
+  );
+
+  // Handle graceful shutdown
+  const handleShutdown = async (_signal: string) => {
+    const timestamp = formatTimestamp();
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+
+    console.log(
+      `\n[${timestamp}] 🛑 Shutting down... (${duration}s, ${changeCount} changes)`,
+    );
+
+    cleanup();
+    process.exit(0);
+  };
+
+  process.on('SIGINT', () => handleShutdown('SIGINT'));
+  process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+
+  // Keep the process alive
+  return new Promise<void>(() => {}); // Never resolves, keeps watching
+}
+
+/**
+ * Trace mode handler (original functionality)
+ */
+async function handleTraceMode(
+  args: CliArgs,
+  config: ContractVariableTraceConfig,
+) {
+  const tracer = new ContractVariableTracer({
+    chainId: args.chainId,
+    rpcUrl: args.rpc,
+  });
+
+  console.log('🚀 Starting contract variable trace...');
+  const startTime = Date.now();
+
+  const bars: Record<string, cliProgress.SingleBar> = {};
+  const onProgress: OnProgressCallback = ({
+    key,
+    description,
+    current,
+    total,
+  }) => {
+    if (!bars[key]) {
+      console.log(description);
+      bars[key] = new cliProgress.SingleBar(
+        {
+          clearOnComplete: true,
+        },
+        cliProgress.Presets.shades_classic,
+      );
+      bars[key].start(total, 0);
+    } else {
+      bars[key].update(current);
+    }
+
+    if (total === current) {
+      bars[key].stop();
+    }
+  };
+
+  const results = await tracer.trace(config, onProgress);
+
+  if (args.output) {
+    await saveToFile(results, args.output);
+    console.log(`Results saved to: ${args.output}`);
+  } else {
+    console.log('\n================Tracing Result START====================');
+    console.log(JSON.stringify(results, null, 2));
+    console.log('================Tracing Result END======================\n');
+  }
+
+  const endTime = Date.now();
+  const duration = ((endTime - startTime) / 1000).toFixed(2);
+
+  console.log(`Trace completed successfully!`);
+  console.log(`Traced ${results.length} data points in ${duration}s`);
+}
+
+/**
  * Main CLI handler
  */
 async function main(args: CliArgs) {
@@ -98,63 +243,18 @@ async function main(args: CliArgs) {
       console.log('Loading configuration...');
     }
 
-    const config = await loadConfig(args.config);
+    const config = await loadConfig(args.config, args.watch);
+
     if (args.verbose) {
       console.log(`Connecting to chain ${args.chainId} via ${args.rpc}`);
       console.log(`Config loaded successfully from: ${args.config}`);
-      console.log(`Contract: ${config.contractAddress}`);
-      console.log(`Method: ${config.methodAbi}`);
-      console.log(`Block range: ${config.fromBlock} to ${config.toBlock}`);
     }
 
-    const tracer = new ContractVariableTracer({
-      chainId: args.chainId,
-      rpcUrl: args.rpc,
-    });
-
-    console.log('🚀 Starting contract variable trace...');
-    const startTime = Date.now();
-
-    const bars: Record<string, cliProgress.SingleBar> = {};
-    const onProgress: OnProgressCallback = ({
-      key,
-      description,
-      current,
-      total,
-    }) => {
-      if (!bars[key]) {
-        console.log(description);
-        bars[key] = new cliProgress.SingleBar(
-          {
-            clearOnComplete: true,
-          },
-          cliProgress.Presets.shades_classic,
-        );
-        bars[key].start(total, 0);
-      } else {
-        bars[key].update(current);
-      }
-
-      if (total === current) {
-        bars[key].stop();
-      }
-    };
-
-    const results = await tracer.trace(config, onProgress);
-
-    if (args.output) {
-      saveToFile(results, args.output);
+    if (args.watch) {
+      await handleWatchMode(args, config);
     } else {
-      console.log('\n================Tracing Result START====================');
-      console.log(JSON.stringify(results, null, 2));
-      console.log('================Tracing Result EDN======================\n');
+      await handleTraceMode(args, config);
     }
-
-    const endTime = Date.now();
-    const duration = ((endTime - startTime) / 1000).toFixed(2);
-
-    console.log(`Trace completed successfully!`);
-    console.log(`Traced ${results.length} data points in ${duration}s`);
   } catch (error) {
     console.error(
       '❌ Error:',
@@ -194,8 +294,7 @@ const cli = yargs(hideBin(process.argv))
     alias: 'o',
     type: 'string',
     demandOption: false,
-    description:
-      'Path to the output file, the tracing result to be save to this file when provided',
+    description: 'Path to the output file for trace mode results',
   })
   .option('verbose', {
     alias: 'v',
@@ -203,9 +302,19 @@ const cli = yargs(hideBin(process.argv))
     default: false,
     description: 'Enable verbose logging',
   })
+  .option('watch', {
+    alias: 'w',
+    type: 'boolean',
+    default: false,
+    description: 'Enable watch mode for real-time monitoring',
+  })
   .example(
     '$0 -c 1 -r https://eth-mainnet.alchemyapi.io/v2/YOUR-API-KEY -f ./config.json',
     'Trace contract variables on Ethereum mainnet',
+  )
+  .example(
+    '$0 --watch --chainId 1 --rpc https://eth-mainnet.alchemyapi.io/v2/YOUR-API-KEY -f ./config.json',
+    'Start real-time monitoring (watch mode)',
   )
   .example(
     '$0 --chainId 42161 --rpc https://arb1.arbitrum.io/rpc --config ./arbitrum-config.json --verbose',
