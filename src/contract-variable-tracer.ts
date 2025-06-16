@@ -303,10 +303,6 @@ export class ContractVariableTracer {
    * 3. Comparing with the previous value to detect actual changes
    * 4. Invoking callbacks only when the value has actually changed
    *
-   * The method uses a dual-monitoring approach:
-   * - Primary: Event-based monitoring for immediate detection
-   * - Fallback: Periodic polling to ensure no changes are missed
-   *
    * @param config - Configuration object specifying the contract, method, and events to monitor
    * @param onNewValue - Callback function invoked when the variable value changes
    *   - `prev`: Previous TraceResult (undefined for the first detected value)
